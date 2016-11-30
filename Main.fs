@@ -102,7 +102,7 @@ let print_card_death (c : card) = printfn "+ %O died (%d overkill)" { c with hea
 let rec insert_sort (i : 'a)  (l : 'a list) f : 'a list =
     match l with
     | [] -> [i]
-    | h::t -> if (f h) > (f i) then i::l else h::(insert_sort i t f) // TODO - Auto swap with random if equals
+    | h::t -> if f h i then i::l else h::(insert_sort i t f)
 
 // Remove useless cards
 let clean_deck (deck1 : deck) : deck =
@@ -110,23 +110,26 @@ let clean_deck (deck1 : deck) : deck =
         (card.typee = "MINION") && (card.attack > 0) && (card.health > 0)
     let rec clean_deck_ric ( deck1 : deck) : deck = 
         match deck1 with
-        | []->[]
-        | [x]->[]
+        | []-> []
+        | [x]-> []
         | x::y::xs -> if validate_card x then x::clean_deck_ric (y::xs) else clean_deck_ric (y::xs)
     clean_deck_ric deck1
 
 let draw_card (mana : int) (player : player) : deck =   
-    let normalize_mana (x : int) (max : int) =
-      if x > max then max
-      else x
+    let normalize_mana (x : int) (max : int) = if x > max then max else x
+    let cmp_point_card (card1 : card) (card2 : card) : bool = 
+        // Calculate points for each card
+        let pnt1 = float(card1.attack) / float(card1.health) // Head
+        let pnt2 = float(card2.attack) / float(card2.health) // Element to insert
 
-    let calc_points (card : card) : float = float(card.attack) / float(card.health) // Calculate points for each card
+        pnt2 > pnt1 // TODO - Random swap if points are equals
+
     // Filter cards based on mana
-    let rec filter_mana (deck : deck) (mana : int) (deckOut : deck): deck = 
+    let rec filter_mana (deck : deck) (mana : int) (deckOut : deck) : deck = 
         match deck with
-        | []->[]
-        | [x]->[]
-        | x::y::xs -> if x.cost <= mana then filter_mana (y::xs) mana (insert_sort x deckOut calc_points) else filter_mana (y::xs) mana deckOut
+        | []-> deckOut
+        | [x]-> if x.cost <= mana then insert_sort x deckOut cmp_point_card else deckOut
+        | x::y::xs -> if x.cost <= mana then filter_mana (y::xs) mana (insert_sort x deckOut cmp_point_card) else filter_mana (y::xs) mana deckOut
     filter_mana player.deck (normalize_mana mana 10) []
 
 // !!! YOU MUST IMPLEMENT THIS !!!
@@ -147,7 +150,7 @@ let fight (deck1 : deck) (deck2 : deck) : player * player * int =
         // Extract cards
         let c1 = draw_card turn p1                                 
         let c2 = draw_card turn p2
-        
+
         // TODO - Impelemt logic here :)      
         
         print_turn_end (p1, p2) // Print Turn results
