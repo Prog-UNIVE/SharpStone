@@ -95,23 +95,73 @@ let print_turn_no_cards (p1 : player, p2 : player) = printfn "* Both %O and %O h
 /// Prints the information of a dead cards. Call this function when a card dies.
 let print_card_death (c : card) = printfn "+ %O died (%d overkill)" { c with health = 0 } -c.health
 
-
-
-
-let rec filtraDeck ( deck1 : deck) : deck = match deck1 with
-                                            |[]->[]
-                                            |[x]->[]
-                                            |x::y::xs -> if (x.typee = "MINIONS") then x::filtraDeck (y::xs) else filtraDeck (y::xs)
 // combat mechanics
 //
 
+// Inserction sort
+let rec insert_sort (i : 'a)  (l : 'a list) f : 'a list =
+    match l with
+    | [] -> [i]
+    | h::t -> if f h i then i::l else h::(insert_sort i t f)
+
+// Remove useless cards
+let clean_deck (deck1 : deck) : deck =
+    let validate_card (card : card) : bool = 
+        (card.typee = "MINION") && (card.attack > 0) && (card.health > 0)
+    let rec clean_deck_ric ( deck1 : deck) : deck = 
+        match deck1 with
+        | []-> []
+        | [x]-> []
+        | x::y::xs -> if validate_card x then x::clean_deck_ric (y::xs) else clean_deck_ric (y::xs)
+    clean_deck_ric deck1
+
+let draw_card (mana : int) (player : player) : deck =   
+    let normalize_mana (x : int) (max : int) = if x > max then max else x
+    let cmp_point_card (card1 : card) (card2 : card) : bool = 
+        // Calculate points for each card
+        let pnt1 = float(card1.attack) / float(card1.health) // Head
+        let pnt2 = float(card2.attack) / float(card2.health) // Element to insert
+
+        pnt2 > pnt1 // TODO - Random swap if points are equals
+
+    // Filter cards based on mana
+    let rec filter_mana (deck : deck) (mana : int) (deckOut : deck) : deck = 
+        match deck with
+        | []-> deckOut
+        | [x]-> if x.cost <= mana then insert_sort x deckOut cmp_point_card else deckOut
+        | x::y::xs -> if x.cost <= mana then filter_mana (y::xs) mana (insert_sort x deckOut cmp_point_card) else filter_mana (y::xs) mana deckOut
+    filter_mana player.deck (normalize_mana mana 10) []
+
 // !!! YOU MUST IMPLEMENT THIS !!!
 let fight (deck1 : deck) (deck2 : deck) : player * player * int =
-    let p1 = { name ="P1"; life = 30; deck = deck1 }    // dummy players
-    let p2 = { name ="P2"; life = 30; deck = deck2 }
-    p1, p2, 0
-   
+    // Clean the decks
+    let cleanDeck1 = clean_deck deck1
+    let cleanDeck2 = clean_deck deck2
 
+    // Define players status
+    let p1 = { name ="P1"; life = 30; deck = cleanDeck1 }   // Player 1
+    let p2 = { name ="P2"; life = 30; deck = cleanDeck2 }   // Player 2
+
+    let mutable turn = 1           // Turn counter also defined as mana
+    let mutable quit = false       // Cycle flag
+    while not quit && p1.life > 0 && p2.life > 0 do
+        print_turn_begin turn       // Begin turn
+        
+        // Extract cards
+        let c1 = draw_card turn p1                                 
+        let c2 = draw_card turn p2
+
+        // TODO - Impelemt logic here :)      
+        
+        print_turn_end (p1, p2) // Print Turn results
+        turn <- turn + 1
+        quit <- true // TODO - Remove after done logic
+
+    // Print game results
+    if p1.life = p2.life then printfn "Tie"
+    elif p1.life > p2.life then printfn "P1 wins"
+    else printfn "P2 wins"
+    p1, p2, turn - 1
 
 // main code
 //
