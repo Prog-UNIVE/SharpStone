@@ -157,37 +157,48 @@ let fight (deck1 : deck) (deck2 : deck) : player * player * int =
 
         if p1.deck.IsEmpty && p2.deck.IsEmpty then
             quit <- true
+        if d1.IsEmpty && d2.IsEmpty then
+            print_turn_no_cards (p1, p2)
+            turn <- turn + 1
         else
             let mutable over1 = 0
             let mutable over2 = 0
             if not d1.IsEmpty && not d2.IsEmpty then
-                let c1 = d1.Head 
+                let c1 = d1.Head
                 let c2 = d2.Head
+
+                print_turn_2cards (c1, c2)
 
                 // player1 vs player2 
                 over2 <- c2.health-c1.attack
                 // player 2 vs player 1
                 over1 <- c1.health-c2.attack
             else
-                () // TODO -  define if some player don't have a card
+                if d2.IsEmpty then 
+                    print_turn_1card (p2, d1.Head)
+                    over2 <- -d1.Head.attack
+                if d1.IsEmpty then 
+                    print_turn_1card (p1, d2.Head)
+                    over1 <- -d2.Head.attack
 
             // Overkill Player 1
-            if over1 <= 0 then
+            if over1 <= 0 && not d1.IsEmpty then
                 //TODO - remove card from list
+                //print_card_death
                 p1.deck <- p1.deck
             if over1 < 0 then
-                p1.life <- p1.life - (over1 * -1)
+                p1.life <- p1.life + over1
                              
             // Overkill Player 2
-            if over2 <= 0 then
+            if over2 <= 0 && not d1.IsEmpty then
                 //TODO - remove card from list
+                //print_card_death
                 p1.deck <- p1.deck
             if over2 < 0 then
                 p2.life <- p2.life - (over2 * -1)
         
             print_turn_end (p1, p2) // Print Turn results
             turn <- turn + 1
-            quit <- true // TODO - Remove after done logic
 
     // Print game results
     if p1.life = p2.life then printfn "Tie"
