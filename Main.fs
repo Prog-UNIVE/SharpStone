@@ -122,7 +122,11 @@ let draw_card (mana : int) (player : player) : deck =
         let pnt1 = float(card1.attack) / float(card1.health) // Head
         let pnt2 = float(card2.attack) / float(card2.health) // Element to insert
 
-        pnt2 > pnt1 // TODO - Random swap if points are equals
+        if pnt1 = pnt2 then
+            let rnd = rnd_int 1 100
+            rnd < 50 // pnt2 is "bigger" than pnt1 whtn rnd is less than 50
+        else
+            pnt2 > pnt1 
 
     // Filter cards based on mana
     let rec filter_mana (deck : deck) (mana : int) (deckOut : deck) : deck = 
