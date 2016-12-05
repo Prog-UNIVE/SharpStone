@@ -152,14 +152,42 @@ let fight (deck1 : deck) (deck2 : deck) : player * player * int =
         print_turn_begin turn       // Begin turn
         
         // Extract cards
-        let c1 = draw_card turn p1                                 
-        let c2 = draw_card turn p2
+        let d1 = draw_card turn p1                                 
+        let d2 = draw_card turn p2
 
-        // TODO - Impelemt logic here :)      
+        if p1.deck.IsEmpty && p2.deck.IsEmpty then
+            quit <- true
+        else
+            let mutable over1 = 0
+            let mutable over2 = 0
+            if not d1.IsEmpty && not d2.IsEmpty then
+                let c1 = d1.Head 
+                let c2 = d2.Head
+
+                // player1 vs player2 
+                over2 <- c2.health-c1.attack
+                // player 2 vs player 1
+                over1 <- c1.health-c2.attack
+            else
+                () // TODO -  define if some player don't have a card
+
+            // Overkill Player 1
+            if over1 <= 0 then
+                //TODO - remove card from list
+                p1.deck <- p1.deck
+            if over1 < 0 then
+                p1.life <- p1.life - (over1 * -1)
+                             
+            // Overkill Player 2
+            if over2 <= 0 then
+                //TODO - remove card from list
+                p1.deck <- p1.deck
+            if over2 < 0 then
+                p2.life <- p2.life - (over2 * -1)
         
-        print_turn_end (p1, p2) // Print Turn results
-        turn <- turn + 1
-        quit <- true // TODO - Remove after done logic
+            print_turn_end (p1, p2) // Print Turn results
+            turn <- turn + 1
+            quit <- true // TODO - Remove after done logic
 
     // Print game results
     if p1.life = p2.life then printfn "Tie"
