@@ -21,10 +21,10 @@ open System.Text
 // globals
 //
 
-let rand = new Random (23)    // remove seed argument for making randomness indeterministic
+let rand = new Random ()    // remove seed argument for making randomness indeterministic
 
 /// Generate a random integer within the interval (a, b) inclusively.
-let rnd_int a b = rand.Next (a, b + 1) 
+let rnd_int a b = rand.Next (a, b+1) 
 
 
 // type definitions
@@ -121,9 +121,9 @@ let draw_card (mana : int) (player : player) : deck =
         // Calculate points for each card
         let pnt1 = float(card1.attack) / float(card1.health) // Head
         let pnt2 = float(card2.attack) / float(card2.health) // Element to insert
-
         if pnt1 = pnt2 then
             let rnd = rnd_int 1 100
+
             rnd < 50 // pnt2 is "bigger" than pnt1 whtn rnd is less than 50
         else
             pnt2 > pnt1 
@@ -189,7 +189,7 @@ let fight (deck1 : deck) (deck2 : deck) : player * player * int =
 
                 // player 2 vs player 1
                 over1 <- c1.health-c2.attack
-                (find p2.deck c2).health <- over2
+                (find p1.deck c1).health <- over1
 
             else
                 if d2.IsEmpty then 
