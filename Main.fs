@@ -21,10 +21,10 @@ open System.Text
 // globals
 //
 
-let rand = new Random (23)    // remove seed argument for making randomness indeterministic
+let rand = new Random ()    // remove seed argument for making randomness indeterministic
 
 /// Generate a random integer within the interval (a, b) inclusively.
-let rnd_int a b = rand.Next (a, b + 1) 
+let rnd_int a b = rand.Next (a, b+1) 
 
 
 // type definitions
@@ -121,8 +121,12 @@ let draw_card (mana : int) (player : player) : deck =
         // Calculate points for each card
         let pnt1 = float(card1.attack) / float(card1.health) // Head
         let pnt2 = float(card2.attack) / float(card2.health) // Element to insert
+        if pnt1 = pnt2 then
+            let rnd = rnd_int 1 100
 
-        pnt2 > pnt1 // TODO - Random swap if points are equals
+            rnd < 50 // pnt2 is "bigger" than pnt1 whtn rnd is less than 50
+        else
+            pnt2 > pnt1 
 
     // Filter cards based on mana
     let rec filter_mana (deck : deck) (mana : int) (deckOut : deck) : deck = 
@@ -131,6 +135,19 @@ let draw_card (mana : int) (player : player) : deck =
         | [x]-> if x.cost <= mana then insert_sort x deckOut cmp_point_card else deckOut
         | x::y::xs -> if x.cost <= mana then filter_mana (y::xs) mana (insert_sort x deckOut cmp_point_card) else filter_mana (y::xs) mana deckOut
     filter_mana player.deck (normalize_mana mana 10) []
+
+//Remove dead card from deck
+let rec rem_card_dead (deck : deck) (card : card) (deckOut: deck) : deck =
+    match deck with 
+    |[]-> deckOut
+    |[x] -> if card.id = x.id then deckOut else x :: deckOut
+    |x::xs -> if card.id = x.id then rem_card_dead xs card deckOut else rem_card_dead xs card (x::deckOut)
+
+let rec find (deck : deck) (card : card) : card =
+    match deck with 
+    | [] -> failwith "no cards"
+    | [x] -> if card.id = x.id then x else failwith "no cards"
+    | x::xs -> if card.id = x.id  then x else find xs card
 
 // !!! YOU MUST IMPLEMENT THIS !!!
 let fight (deck1 : deck) (deck2 : deck) : player * player * int =
@@ -145,17 +162,59 @@ let fight (deck1 : deck) (deck2 : deck) : player * player * int =
     let mutable turn = 1           // Turn counter also defined as mana
     let mutable quit = false       // Cycle flag
     while not quit && p1.life > 0 && p2.life > 0 do
+   // while not quit && p1.life > 0 && p2.life > 0 && turn < 25 do // debug
         print_turn_begin turn       // Begin turn
         
         // Extract cards
-        let c1 = draw_card turn p1                                 
-        let c2 = draw_card turn p2
+        let d1 = draw_card turn p1                                 
+        let d2 = draw_card turn p2
 
-        // TODO - Impelemt logic here :)      
+        if p1.deck.IsEmpty && p2.deck.IsEmpty then
+            quit <- true
+        if d1.IsEmpty && d2.IsEmpty then
+            print_turn_no_cards (p1, p2)
+            turn <- turn + 1
+        else
+            let mutable over1 = 0
+            let mutable over2 = 0
+            if not d1.IsEmpty && not d2.IsEmpty then
+                let c1 = d1.Head
+                let c2 = d2.Head
+
+                print_turn_2cards (c1, c2)
+
+                // player1 vs player2 
+                over2 <- c2.health-c1.attack
+                (find p2.deck c2).health <- over2
+
+                // player 2 vs player 1
+                over1 <- c1.health-c2.attack
+                (find p1.deck c1).health <- over1
+
+            else
+                if d2.IsEmpty then 
+                    print_turn_1card (p2, d1.Head)
+                    over2 <- -d1.Head.attack
+                if d1.IsEmpty then 
+                    print_turn_1card (p1, d2.Head)
+                    over1 <- -d2.Head.attack
+
+            // Overkill Player 1
+            if over1 <= 0 && not d1.IsEmpty then
+                p1.deck <- rem_card_dead p1.deck d1.Head []  
+                print_card_death d1.Head
+            if over1 < 0 then
+                p1.life <- p1.life + over1
+                             
+            // Overkill Player 2
+            if over2 <= 0 && not d2.IsEmpty then 
+                p2.deck <- rem_card_dead p2.deck d2.Head []  
+                print_card_death d2.Head
+            if over2 < 0 then
+                p2.life <- p2.life + over2
         
-        print_turn_end (p1, p2) // Print Turn results
-        turn <- turn + 1
-        quit <- true // TODO - Remove after done logic
+            print_turn_end (p1, p2) // Print Turn results
+            turn <- turn + 1
 
     // Print game results
     if p1.life = p2.life then printfn "Tie"

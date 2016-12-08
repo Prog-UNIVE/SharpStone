@@ -27,7 +27,7 @@
     <DocumentationFile>bin\Debug\Sharpstone.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <StartWorkingDirectory>..\..</StartWorkingDirectory>
-    <StartArguments>deck1.txt deck1.txt</StartArguments>
+    <StartArguments>deck3.txt deck3.txt</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
